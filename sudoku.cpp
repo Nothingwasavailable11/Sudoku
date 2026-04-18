@@ -1,10 +1,12 @@
 #include "sudoku.h"
 
 #include <iostream>
+//#include <algorithm>
 #include <cstdlib>
 #include <ctime>
 #include <cctype>
 #include <string>
+#include <sstream>
 #include <windows.h>
 
 using namespace std;
@@ -17,7 +19,8 @@ bool valid_input(string Line, int Puzzle[9][9]){
     }
 
     int num, row, column;
-    Line >> num >> row >> column;
+    stringstream ss(Line);
+    ss >> num >> row >> column;
     if(num > 9 || num < 1){
         cout << "Invalid number! Number must be between 1 and 9 inclusive! Try again." << endl;
         return false;
@@ -30,7 +33,7 @@ bool valid_input(string Line, int Puzzle[9][9]){
         cout << "Invalid column! Column must be between 1 and 9 inclusive! Try again." << endl;
         return false;
     }
-    if(Puzzle[row][column] != 0){
+    if(Puzzle[row - 1][column - 1] != 0){
         cout << "Invalid Input! The number at row " << row << " and column " << column << " is given, and so, it cannot be changed!" << endl;
         return false;
     }
@@ -46,7 +49,7 @@ bool check(int Grid[9][9]){
             }
         }
     }
-    for(int h = 0; j < 3; j++){
+    for(int h = 0; h < 3; h++){
         for(int i = 0; i < 3; i++){
             int num[9], n = 0;
             for(int j = 0; j < 3; j++){
@@ -69,34 +72,31 @@ bool solved(int Game[9][9]){
     return false;
 }
 
-int generate_grid(){
-    int grid[9][9] = {0};
+void generate_grid(int Grid[9][9]){
     srand(time(0));
     int counter = 0;
     for(int i = 0; i < 9; i++){
         for(int j = 0; j < 9; j++){
-            while(counter == 0 || !check(grid)){
-                grid[i][j] = (rand() % 9) + 1;
+            while(counter == 0 || !check(Grid)){
+                Grid[i][j] = (rand() % 9) + 1;
                 counter++;
             }
         }
     }
-    return grid;
 }
 
-int generate_puzzle(int Grid[9][9]){
-    int Puzzle = Grid;
+void generate_puzzle(int Grid[9][9], int Puzzle[9][9]){
+    for(int i = 0; i < 9; i++) for(int j = 0; j < 9; j++) Puzzle[i][j] = Grid[i][j];
     srand(time(1));
-    missing_nums = (rand() % 9) + 46;
-    for(int a = 0, a < missing_nums, a++){
-        int x = (rand() % 9) + 1, y = (rand() % 9) + 1;
+    int missing_nums = (rand() % 9) + 46;
+    for(int a = 0; a < missing_nums; a++){
+        int x = (rand() % 9), y = (rand() % 9);
         if(Puzzle[y][x] != 0) Puzzle[y][x] = 0;
         else{
             missing_nums++;
             continue;
         }
     }
-    return Puzzle;
 }
 
 void print(int Game[9][9]){
@@ -114,12 +114,14 @@ void print(int Game[9][9]){
 }
 
 int sudoku( int code2 ){
+    int grid[9][9] = {0}, puzzle[9][9] = {0}, game[9][9] = {0};
     cout << "Your challenge is being generated..." << endl;
-    int grid[9][9] = generate_grid();
+    generate_grid(grid);
     cout << "Almost there..." << endl;
-    int puzzle[9][9] = generate_puzzle(grid);
-    cout << "It's ready! Enjoy if you dare!!! MUAHAHAHAHAHAHAHA"
-    int game[9][9] = puzzle;
+    generate_puzzle(grid, puzzle);
+    cout << "It's ready! Enjoy if you dare!!! MUAHAHAHAHAHAHAHA" << endl;
+    for(int i = 0; i < 9; i++) for(int j = 0; j < 9; j++) game[i][j] = grid[i][j];
+
     print(game);
     
     while(!solved(game)){
@@ -128,8 +130,9 @@ int sudoku( int code2 ){
         getline(cin, line);
         if(line == "Quit" || line == "quit") break;
         else if(valid_input(line, puzzle)){
-            line >> number >> row >> column;
-            game[row][column] = number;
+            stringstream ss(line);
+            ss >> number >> row >> column;
+            game[row - 1][column - 1] = number;
             print(game);
             continue;
         }
