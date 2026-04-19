@@ -1,13 +1,14 @@
 #include "sudoku.h"
 
 #include <iostream>
-//#include <algorithm>
 #include <cstdlib>
 #include <ctime>
 #include <cctype>
 #include <string>
 #include <sstream>
-#include <windows.h>
+#include <thread>
+#include <chrono>
+
 
 using namespace std;
 
@@ -72,55 +73,97 @@ bool solved(int Game[9][9]){
     return false;
 }
 
+bool fill(int Grid[9][9], int i, int j) {
+    if (i == 9) return true;
+
+    int ni = (j == 8) ? i + 1 : i;
+    int nj = (j == 8) ? 0 : j + 1;
+
+    int nums[9] = {1,2,3,4,5,6,7,8,9};
+
+    for (int k = 0; k < 9; k++) {
+        int r = rand() % 9;
+        int temp = nums[k];
+        nums[k] = nums[r];
+        nums[r] = temp;
+    }
+
+    for (int k = 0; k < 9; k++) {
+        Grid[i][j] = nums[k];
+
+        if (check(Grid) && fill(Grid, ni, nj))
+            return true;
+    }
+
+    Grid[i][j] = 0;
+    return false;
+}
+
 void generate_grid(int Grid[9][9]){
     srand(time(0));
-    int counter = 0;
-    for(int i = 0; i < 9; i++){
-        for(int j = 0; j < 9; j++){
-            while(counter == 0 || !check(Grid)){
-                Grid[i][j] = (rand() % 9) + 1;
-                counter++;
+    fill(Grid, 0, 0);
+}
+
+
+void generate_puzzle(int Grid[9][9], int Puzzle[9][9]){
+    for(int i = 0; i < 9; i++) for(int j = 0; j < 9; j++) Puzzle[i][j] = Grid[i][j];
+    int missing_prob = (rand() % 9) + 36;
+    int count = missing_prob * 0.8, counter = 0;
+    while(counter < count){
+        for(int i = 0; i < 9; i++){
+            for (int j = 0; j < 9; j++){
+                int miss = (rand() % 81) + 1;
+                if(miss > missing_prob && Puzzle[i][j] != 0){
+                    Puzzle[i][j] = 0;
+                    counter++;
+                }
             }
         }
     }
 }
 
-void generate_puzzle(int Grid[9][9], int Puzzle[9][9]){
-    for(int i = 0; i < 9; i++) for(int j = 0; j < 9; j++) Puzzle[i][j] = Grid[i][j];
-    srand(time(1));
-    int missing_nums = (rand() % 9) + 46;
-    for(int a = 0; a < missing_nums; a++){
-        int x = (rand() % 9), y = (rand() % 9);
-        if(Puzzle[y][x] != 0) Puzzle[y][x] = 0;
-        else{
-            missing_nums++;
-            continue;
-        }
-    }
-}
-
 void print(int Game[9][9]){
-    cout << "   1 2 3 4 5 6 7 8 9 " << endl;
-    cout << "   _ _ _ _ _ _ _ _ _ " << endl;
+    cout << endl << "     1   2   3    4   5   6    7   8   9   " << endl << endl;
+    cout << "  ||===|===|===||===|===|===||===|===|===||" << endl;
     for(int i = 0; i < 9; i++){
-        cout << i + 1 << " ";
+        cout << i + 1 << " ||";
         for(int j = 0; j < 9; j++){
-            cout << "|" << Game[i][j];
+            cout << " " << Game[i][j] << (((j + 1) % 3 == 0) ? " ||" : " |");
         }
-        cout << "|" << endl;
+        cout << endl;
+	cout << (((i + 1) % 3 == 0) ? "  ||===|===|===||===|===|===||===|===|===||" : "  ||---|---|---||---|---|---||---|---|---||") << endl;
     }
-    cout << "   _ _ _ _ _ _ _ _ _ " << endl;
+    cout << "  _________________________________________" << endl;
+    cout << endl;
     cout << "Input format: 'number' 'row' 'column'" << endl;
+    cout << "Enter 'quit' if you wanna give up." << endl;
 }
 
-int sudoku( int code2 ){
+void type_text(string text, int delay_ms = 40) {
+    for (char c : text) {
+        cout << c << flush;
+        this_thread::sleep_for(chrono::milliseconds(delay_ms));
+    }
+    cout << endl;
+}
+
+int sudoku(int code2){
     int grid[9][9] = {0}, puzzle[9][9] = {0}, game[9][9] = {0};
-    cout << "Your challenge is being generated..." << endl;
+    
+    type_text("Your challenge is being generated...");
+    this_thread::sleep_for(chrono::seconds(2));
+
     generate_grid(grid);
-    cout << "Almost there..." << endl;
+
+    type_text("Almost there...");
+    this_thread::sleep_for(chrono::seconds(3));
+
     generate_puzzle(grid, puzzle);
-    cout << "It's ready! Enjoy if you dare!!! MUAHAHAHAHAHAHAHA" << endl;
-    for(int i = 0; i < 9; i++) for(int j = 0; j < 9; j++) game[i][j] = grid[i][j];
+
+    type_text("It's ready! Enjoy if you dare!!! MUAHAHAHAHAHAHAHA");
+    this_thread::sleep_for(chrono::seconds(2));
+
+    for(int i = 0; i < 9; i++) for(int j = 0; j < 9; j++) game[i][j] = puzzle[i][j];
 
     print(game);
     
@@ -140,10 +183,10 @@ int sudoku( int code2 ){
     }
     
     if(solved(game)){
-        system("Color 0A");
         print(game);
-        cout << "CONGRATULATIONS! You have DONE IT!!! Here's the reward of your unmatched Intellect: Code2 = " << code2 << endl;
-        cout << "Best of Luck Traveller!" << endl;
+        type_text("CONGRATULATIONS! You have DONE IT!!! Here's the reward of your unmatched Intellect:); 
+        cout << "Code2 = " << code2 << endl;
+        type_text("Best of Luck Traveller!");
         return 1;
     }
     return 0;
